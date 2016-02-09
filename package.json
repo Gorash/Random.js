@@ -1,0 +1,10 @@
+{
+  "name": "Random.js",
+  "version": "0.0",
+  "description": "methods to generate or modify: random number, array (like noise) or 2d (like perlin).",
+  "main": "Random.js",
+  "author": {
+    "name": "Christophe Matthieu",
+    "email": "tof.matthieu@gmail.com"
+  }
+}
