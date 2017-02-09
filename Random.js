@@ -61,8 +61,14 @@ Random.prototype.seedRandom = function seedRandom (nb) {
     this._seed = (this._seed+(nb|0)+1) * 36873.0 % 2147483647 | 0;
     return this._seed / 2147483647;
 };
+Random.prototype.boolean = function boolean () {
+    return this.random() >= 0.5;
+};
 Random.prototype.range = function range (min, max) {
     return min + (this.random() * (max - min));
+};
+Random.prototype.unsignedInteger = function unsignedInteger (max) {
+    return Math.round(this.random()*max);
 };
 Random.prototype.NonUniformRandom = function NonUniformRandom (min, max) {
     var rand = (this.random() * (max - min));
@@ -551,11 +557,11 @@ Random.spherization = function spherization (perlin, ratio, spherical, x, y) {
     mg = Math.sqrt(mg / (width*height));
     ag = ag / (width*height);
     var average = (ag*2+mg)/3;
-    var deph = ratio*average*2;
+    var depth = ratio*average*2;
 
     for (var px=0;px<width; px++) {
         for (var py=0;py<height; py++) {
-            newMap[px][py] = newMap[px][py]-deph;
+            newMap[px][py] = newMap[px][py]-depth;
         }
     }
 
@@ -568,7 +574,7 @@ Random.spherization = function spherization (perlin, ratio, spherical, x, y) {
  *  Array of Objects {x, y}
  *
  */
-Random.prototype.walk = function randomWalk (length, amplitude, cubic) {
+Random.prototype.walk = function walk (length, amplitude, cubic) {
     var x=0;
     var y=0;
     var res = [x, y];
@@ -590,7 +596,7 @@ Random.prototype.walk = function randomWalk (length, amplitude, cubic) {
  *  Array of Objects {x, y, z}
  *
  */
-Random.prototype.walk3D = function randomWalk3D (length, amplitude, cubic) {
+Random.prototype.walk3D = function walk3D (length, amplitude, cubic) {
     var x=0;
     var y=0;
     var z=0;
