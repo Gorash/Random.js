@@ -1,30 +1,18 @@
 /*
     Random.js
-
     Random object contains different methods to generate or modify: random number, array (like noise) or 2d (like perlin).
-
-    new Random ( seed );
-    seed is optional:
-     - if seed == null: generate a random seed with Math.random
-     - if seed === null, Math.random is used to generate the noise).
-
     ***************
-
     Copyright (c) 2013, Christophe Matthieu
     https://github.com/Gorash
-
     Released under the MIT license
-
     Permission is hereby granted, free of charge, to any person obtaining a copy of
     this software and associated documentation files (the "Software"), to deal in
     the Software without restriction, including without limitation the rights to use,
     copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the
     Software, and to permit persons to whom the Software is furnished to do so,
     subject to the following conditions:
-
     The above copyright notice and this permission notice shall be included in all
     copies or substantial portions of the Software.
-
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
     FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
@@ -37,29 +25,101 @@
 (function (module){
 "use strict";
 
-function Random (seed) {
-    if (seed == null) {
-        if (seed === null) this.random = Math.random;
-        this._seed = Math.random() * 2147483647 | 0;
-    } else {
-        this._seed = seed | 0;
+/**
+ * Random object
+ * 
+ * @params {string | number | null} methodOrSeed
+ *  if null:
+ *      use Math.random as random generator method
+ *  else if number:
+ *      use default value primeNumber and use this value as argument
+ *  else:
+ *      use the name of a random generator method
+ *      - primeNumber
+ *      - mulberry32
+ *      - xoshiro128ss
+ *      - sfc32
+ *      - JSF
+ *      - LCG
+ * @params {number[]} ...args
+ *  random generator method arguments
+ */
+function Random (methodOrSeed, ...args) {
+    if (methodOrSeed !== null) {
+        if (!args.length) {
+            args.push(methodOrSeed);
+            methodOrSeed = 'primeNumber';
+        }
+        this.random = this['_' + methodOrSeed].apply(this, args);
+        this.random();
     }
-    this._init = this._seed;
-    this.seed();
 }
-Random.prototype.seed = function seed () {
-    return this._seed = (this._seed+1) * 36873.0 % 2147483647 | 0;
+Random.prototype._primeNumber = function _primeNumber (seed) {
+    if (typeof seed == 'undefined') {
+        seed = Math.random() * 2147483647;
+    }
+    seed = seed | 0;
+    return function random () {
+        seed = (seed + 1) * 36877 % 2147483647 | 0;
+        return seed / 2147483647;
+    }
+};
+Random.prototype._mulberry32 = function _mulberry32 (a) {
+    return function random () {
+      var t = a += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+};
+Random.prototype._xoshiro128ss = function _xoshiro128ss (a, b, c, d) {
+    return function random () {
+        var t = b << 9, r = a * 5; r = (r << 7 | r >>> 25) * 9;
+        c ^= a; d ^= b;
+        b ^= c; a ^= d; c ^= t;
+        d = d << 11 | d >>> 21;
+        return (r >>> 0) / 4294967296;
+    }
+};
+Random.prototype._sfc32 = function _sfc32(a, b, c, d) {
+    return function random () {
+      a >>>= 0; b >>>= 0; c >>>= 0; d >>>= 0; 
+      var t = (a + b) | 0;
+      a = b ^ b >>> 9;
+      b = c + (c << 3) | 0;
+      c = (c << 21 | c >>> 11);
+      d = d + 1 | 0;
+      t = t + d | 0;
+      c = c + t | 0;
+      return (t >>> 0) / 4294967296;
+    }
+};
+Random.prototype._JSF = function _JSF (seed) {
+    function random () {
+        var e = s[0] - (s[1]<<27 | s[1]>>>5);
+         s[0] = s[1] ^ (s[2]<<17 | s[2]>>>15),
+         s[1] = s[2] + s[3],
+         s[2] = s[3] + e, s[3] = s[0] + e;
+        return (s[3] >>> 0) / 4294967296; // 2^32
+    }
+    seed >>>= 0;
+    var s = [0xf1ea5eed, seed, seed, seed];
+    for(var i = 0; i < 20; i++) {
+        random();
+    }
+    return random;
+};
+Random.prototype._LCG = function _LCG (seed) {
+    return function random() {
+        return (2**31 - 1 & (seed = Math.imul(48271, seed))) / 2**31;
+    }
 };
 /*
  * @return: random number
  *
  */
 Random.prototype.random = function random () {
-    return this.seed() / 2147483647;
-};
-Random.prototype.seedRandom = function seedRandom (nb) {
-    this._seed = (this._seed+(nb|0)+1) * 36873.0 % 2147483647 | 0;
-    return this._seed / 2147483647;
+    return Math.random();
 };
 Random.prototype.boolean = function boolean () {
     return this.random() >= 0.5;
